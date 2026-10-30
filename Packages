@@ -30,3 +30,27 @@ Description: Give your notifications style!
 Author: J_W_I_
 Name: NotificationGlow2
 
+Package: local.eaptls12fix
+Version: 1.0.1
+Architecture: iphoneos-arm
+Maintainer: J_W_I_
+Installed-Size: 9
+Depends: mobilesubstrate (>= 0.9.5000)
+Filename: ./debs/eaptls12fix_1.0.1_iphoneos-arm.deb
+Size: 2634
+MD5sum: 6a820a850cd7707886130332cbb837f7
+SHA1: d7373732852412f9b372c1042d23ad83bd55b51f
+SHA256: 4d2672fd349bb304ecb1355d21a23e84f1b682f97d4141160c325e31df86b917
+Section: Tweaks
+Description: Enables TLS 1.2 for the legacy iOS 5/6 EAP client
+ Fixes WPA2-Enterprise (PEAP/TTLS) joins on networks whose RADIUS
+ server requires TLS 1.2, such as ANU-Secure / eduroam.
+ .
+ The tweak only widens the TLS version range of client contexts in
+ eapolclient. Certificate validation, CA anchors, server-name checks
+ and credentials are left untouched.
+ .
+ Tested on iPod3,1 (iOS 5.1.1) and iPod4,1 (iOS 6.1.6).
+Author: J_W_I_
+Name: EAP TLS 1.2 Fix
+

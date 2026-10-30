@@ -3,6 +3,13 @@ Label: J_W_I_'s Repo
 Suite: stable
 Version: 1.0
 Codename: ios
-Architectures: iphoneos-arm64
+Date: Fri, 30 Oct 2026 17:50:00 +1100
+Architectures: iphoneos-arm64 iphoneos-arm
 Components: main
 Description: Cool Tweaks
+MD5Sum:
+ da23cfd83fe98fb39d733e224133401c 1823 Packages
+SHA1:
+ e83c54b0414098de920611feb8600c5b943ab894 1823 Packages
+SHA256:
+ 345e059213bb88f430050c5dce315157a3bc2034f819eefd6d48c93d82857202 1823 Packages

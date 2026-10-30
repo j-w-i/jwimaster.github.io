@@ -1,1 +1,8 @@
+local.eaptls12fix (1.0.1) stable; urgency=low
 
+  * Add EAP TLS 1.2 Fix, enabling TLS 1.2 for the legacy iOS 5/6
+    eapolclient so WPA2-Enterprise networks such as ANU-Secure can
+    authenticate. Certificate validation is unchanged.
+  * Tested on iPod3,1 iOS 5.1.1 and iPod4,1 iOS 6.1.6.
+
+ -- J_W_I_ <64947174+JWIMaster@users.noreply.github.com>  Fri, 30 Oct 2026 17:50:00 +1100
