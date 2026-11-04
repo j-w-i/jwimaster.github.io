@@ -3,19 +3,19 @@ Label: J_W_I_'s Repo
 Suite: stable
 Version: 1.0
 Codename: ios
-Date: Wed, 04 Nov 2026 03:22:00 +1100
+Date: Wed, 04 Nov 2026 04:01:00 +1100
 Architectures: iphoneos-arm64 iphoneos-arm
 Components: main
 Description: Cool Tweaks
 MD5Sum:
- 70dd3a06ac146bad6ce5d0720abe81a2 2011 Packages
- d0385cd12c6e87d20e85a91edc6fec8c 1046 Packages.gz
- d4e3435e5ddc85cb3077a501dfcccf65 1171 Packages.bz2
+ d822e8bd55a4c7b4d254d4e8f3912f00 2014 Packages
+ 38871e68058948bc384d778e2edc909f 1041 Packages.gz
+ e31e60e84bbb4508bf2f96930643ecea 1163 Packages.bz2
 SHA1:
- 5933d4d3fc04941efd711aab5f31e6209f58b2c2 2011 Packages
- 21395a5b60a65146e9df2574bb4de1f767cd3e9f 1046 Packages.gz
- 77ce98caab2f2bae4091b1c1b80b5dcc4db3a501 1171 Packages.bz2
+ 0e7b7312a72c73ea188344914ea4f59e205327e4 2014 Packages
+ 11265bba5228f5ad07d412412bf60cfcca7236b5 1041 Packages.gz
+ 538da334c4b18a890d8a3e65de757bf5d339e495 1163 Packages.bz2
 SHA256:
- 0ae9e0d432454cb76f0e484a6d7992429c2f4aa845219c62b3e7bea90917b1c2 2011 Packages
- 59391dca8ac0a93873c2fa8970a89a112805990115df28787c0ba07009034064 1046 Packages.gz
- b92ed3f5aa35c9593674ed398d8a908302c008402bf30525146c45e6198d479a 1171 Packages.bz2
+ 41ebc4351199abbec1d88a38166e2044d05b90f156f27f782abe28bc97f90117 2014 Packages
+ e8423fa84d54ac83be30dc36c6ad8b701088fa5b33cdfe5080635b1b808a46e5 1041 Packages.gz
+ 18ba1deb40a370d2e689b1987a403479dd0e0a77f2acfd8e27cc108180d3b802 1163 Packages.bz2

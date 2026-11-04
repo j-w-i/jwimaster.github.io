@@ -1,11 +1,12 @@
 /* EAP TLS 1.2 compatibility fix for iOS 5/6, plus Wi-Fi watchdog bootstrap.
  *
  * TLS part:
- *   The legacy eapolclient creates its TLS context with kTLSProtocol1Only, so
- *   PEAP/TTLS only advertise TLS 1.0 and servers that require TLS 1.2 reject
- *   the handshake. This tweak raises the *maximum* protocol version to TLS 1.2
- *   for EAP client contexts, leaving the minimum at TLS 1.0 so re-auth and
- *   session reuse can still fall back instead of failing the link.
+ *   The legacy eapolclient creates its TLS context with kTLSProtocol1Only (iOS
+ *   5/6) or kTLSProtocol1 with min=max=TLS 1.0 (iOS 7), so PEAP/TTLS only
+ *   advertise TLS 1.0 and servers that require TLS 1.2 reject the handshake.
+ *   This tweak raises the *maximum* protocol version to TLS 1.2 for EAP client
+ *   contexts, leaving the minimum at TLS 1.0 so re-auth and session reuse can
+ *   still fall back instead of failing the link.
  *
  * Watchdog part:
  *   wifid/eapolclient start as root and can keep a dead association alive
@@ -43,6 +44,7 @@ static void (*hook_function)(void *, void *, void **);
 static SSLContextRef (*original_create)(SSLProtocol, Boolean, ReadFunc, WriteFunc, void *, char *, OSStatus *);
 static OSStatus (*set_max)(SSLContextRef, SSLProtocol);
 
+#define kTLSProtocol1 4
 #define kTLSProtocol1Only 5
 #define kTLSProtocol12 8
 #define O_RDONLY 0
@@ -78,7 +80,7 @@ static SSLContextRef create_with_tls12(SSLProtocol protocol, Boolean server,
                                        ReadFunc readfn, WriteFunc writefn,
                                        void *handle, char *peer, OSStatus *status) {
     SSLContextRef ctx = original_create(protocol, server, readfn, writefn, handle, peer, status);
-    if (ctx == (void *)0 || server || protocol != kTLSProtocol1Only) {
+    if (ctx == (void *)0 || server || (protocol != kTLSProtocol1 && protocol != kTLSProtocol1Only)) {
         return ctx;
     }
     /* Raise the ceiling only: min stays TLS 1.0 so a failed/rekeyed or resumed
@@ -88,7 +90,7 @@ static SSLContextRef create_with_tls12(SSLProtocol protocol, Boolean server,
         syslog(3, "EAPTLS12Fix: SSLSetProtocolVersionMax failed (%d); using default TLS", maximum);
         return ctx;
     }
-    syslog(5, "EAPTLS12Fix: EAP context may negotiate up to TLS 1.2 (min TLS 1.0)");
+    syslog(5, "EAPTLS12Fix: EAP context may negotiate up to TLS 1.2 (was proto %d)", protocol);
     return ctx;
 }
 
