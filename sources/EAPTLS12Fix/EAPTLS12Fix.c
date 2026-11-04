@@ -27,6 +27,7 @@ typedef OSStatus (*WriteFunc)(void *, const void *, unsigned long *);
 
 extern void *dlsym(void *, const char *);
 extern void *dlopen(const char *, int);
+extern int access(const char *, int);
 extern void syslog(int, const char *, ...);
 extern const char *getprogname(void);
 extern int strcmp(const char *, const char *);
@@ -53,6 +54,7 @@ static int watchdog_running(void) {
     char buf[32];
     long n;
     int fd = open("/var/run/wifi-watchdog.pid", O_RDONLY);
+    if (fd < 0) fd = open("/tmp/wifi-watchdog.pid", O_RDONLY);
     int pid = 0;
     char *p;
     if (fd < 0) return 0;
@@ -64,14 +66,27 @@ static int watchdog_running(void) {
     return (pid > 1 && kill(pid, 0) == 0) ? 1 : 0;
 }
 
+static const char *first_existing(const char *a, const char *b, const char *c) {
+    if (a && access(a, 0) == 0) return a;
+    if (b && access(b, 0) == 0) return b;
+    if (c && access(c, 0) == 0) return c;
+    return (const char *)0;
+}
+
 static void ensure_watchdog(void) {
     int child;
+    const char *script, *shell;
     if (geteuid() != 0) return;
     if (watchdog_running()) return;
+    script = first_existing("/usr/bin/wifi-watchdog.sh",
+                            "/var/jb/usr/bin/wifi-watchdog.sh", (const char *)0);
+    shell = first_existing("/bin/bash", "/var/jb/bin/bash", "/var/jb/usr/bin/bash");
+    if (!script) return;
+    if (!shell) shell = "/bin/sh";
     child = fork();
     if (child == 0) {
         setsid();
-        execl("/bin/bash", "bash", "/usr/bin/wifi-watchdog.sh", (char *)0);
+        execl(shell, "bash", script, (char *)0);
         _exit(127);
     }
 }
@@ -114,13 +129,28 @@ __attribute__((constructor)) static void install(void) {
             return;
         }
         {
-            void *substrate = dlopen("/Library/Frameworks/CydiaSubstrate.framework/CydiaSubstrate", 2);
+            static const char *paths[] = {
+                "/Library/Frameworks/CydiaSubstrate.framework/CydiaSubstrate",
+                "/var/jb/Library/Frameworks/CydiaSubstrate.framework/CydiaSubstrate",
+                "/usr/lib/libsubstrate.dylib",
+                "/var/jb/usr/lib/libsubstrate.dylib",
+                (const char *)0
+            };
+            void *substrate = (void *)0;
+            int i;
+            for (i = 0; paths[i] != (const char *)0 && substrate == (void *)0; i++) {
+                if (access(paths[i], 0) == 0) substrate = dlopen(paths[i], 2);
+            }
             hook_function = substrate ? dlsym(substrate, "MSHookFunction") : (void *)0;
             if (hook_function == (void *)0) {
                 syslog(3, "EAPTLS12Fix: Substrate hook API unavailable; no hook installed");
                 return;
             }
+#if defined(__arm64__) || defined(__aarch64__)
+            hook_function(target, (void *)create_with_tls12, (void **)&original_create);
+#else
             hook_function((void *)((unsigned long)target | 1), (void *)create_with_tls12, (void **)&original_create);
+#endif
         }
     }
     syslog(5, "EAPTLS12Fix: installed EAP TLS 1.2 ceiling hook");

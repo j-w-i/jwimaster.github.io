@@ -34,28 +34,27 @@ Author: J_W_I_
 Name: EAP TLS 1.2 Fix
 
 Package: local.eaptls12fix
-Version: 1.4.1
+Version: 1.5.0
 Architecture: iphoneos-arm
 Maintainer: J_W_I_
-Installed-Size: 14
+Installed-Size: 80
 Depends: mobilesubstrate (>= 0.9.5000), bash
-Filename: ./debs/eaptls12fix_1.4.1_iphoneos-arm.deb
-Size: 4462
-MD5sum: 0392943df1fedebacc35f105dec5ea04
-SHA1: 2bc743eec59bc96bafc514c1741a082aadfa942d
-SHA256: 9e9056d112c7885b2e26329435715a3c91ad5c65928f3784c5241fea2bb7bf84
+Filename: ./debs/eaptls12fix_1.5.0_iphoneos-arm.deb
+Size: 6944
+MD5sum: 6c7fa1366212031fcc6105f08439f980
+SHA1: b5a5b731884d410e119555798c56c2289781e46a
+SHA256: 629e413d9c17288754909aa17ff6784357970afee5e79e0891d1744a1dc8b150
 Section: Tweaks
 Description: EAP TLS 1.2 plus automatic Wi-Fi recovery
- Lets the legacy iOS 5/6/7 EAP client negotiate TLS 1.2 (raise-only
- version ceiling) so WPA2-Enterprise networks such as ANU-Secure work.
+ Universal armv7 + arm64 build. Raises the TLS ceiling of the legacy
+ iOS EAP client so WPA2-Enterprise networks such as ANU-Secure work.
  .
- Also installs a watchdog: if the device stays "connected" with no
- traffic, it restarts wifid after three failed probes so the link
- re-associates and re-authenticates automatically. Recovery log:
- /var/mobile/Media/wifi-watchdog.log
+ Installs a watchdog that restarts wifid when the device stays
+ "connected" with no traffic, so the link re-associates and
+ re-authenticates automatically. Log: /var/mobile/Media/wifi-watchdog.log
  .
- 1.4.1 handles the iOS 7 EAP context (kTLSProtocol1 with min=max
- TLS 1.0), installs the helper to /usr/bin and ships parent dirs.
+ Supports rootful and rootless (/var/jb) jailbreaks and both the
+ iOS 5/6 (kTLSProtocol1Only) and iOS 7+ (kTLSProtocol1) EAP contexts.
 Author: J_W_I_
 Name: EAP TLS 1.2 Fix
 
