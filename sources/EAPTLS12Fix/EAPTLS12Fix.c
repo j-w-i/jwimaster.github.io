@@ -10,7 +10,7 @@
  * Watchdog part:
  *   wifid/eapolclient start as root and can keep a dead association alive
  *   ("connected", no traffic). When loaded into either process this tweak
- *   starts /usr/local/bin/wifi-watchdog.sh detached if it is not already
+ *   starts /usr/bin/wifi-watchdog.sh detached if it is not already
  *   running, so the recovery daemon is re-established on every Wi-Fi restart.
  *
  * Certificate validation, trust anchors, server-name checks and credentials
@@ -69,7 +69,7 @@ static void ensure_watchdog(void) {
     child = fork();
     if (child == 0) {
         setsid();
-        execl("/bin/bash", "bash", "/usr/local/bin/wifi-watchdog.sh", (char *)0);
+        execl("/bin/bash", "bash", "/usr/bin/wifi-watchdog.sh", (char *)0);
         _exit(127);
     }
 }

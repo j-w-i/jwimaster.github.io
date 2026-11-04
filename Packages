@@ -31,19 +31,19 @@ Author: J_W_I_
 Name: NotificationGlow2
 
 Package: local.eaptls12fix
-Version: 1.3.0
+Version: 1.4.0
 Architecture: iphoneos-arm
 Maintainer: J_W_I_
 Installed-Size: 14
 Depends: mobilesubstrate (>= 0.9.5000), bash
-Filename: ./debs/eaptls12fix_1.3.0_iphoneos-arm.deb
-Size: 4310
-MD5sum: 048c788206a795aef5fca651c53a1952
-SHA1: 2a1ae743338792e956c407f1ed570d81c8d654de
-SHA256: 865c20938b62fe0df2f5c6ceafe8f68faf50056d3e26ef545f66fa270066ec85
+Filename: ./debs/eaptls12fix_1.4.0_iphoneos-arm.deb
+Size: 4416
+MD5sum: 75a2f2af37ce05eee9ee3febc414c9ec
+SHA1: 870a337fb38e77b5a79a3b205180a293be532003
+SHA256: 4e9745c136bda03730e2e06f45c96563b82dcc053a8ed8b9c0fa6a12c59bcfd5
 Section: Tweaks
 Description: EAP TLS 1.2 plus automatic Wi-Fi recovery
- Lets the legacy iOS 5/6 EAP client negotiate TLS 1.2 (raise-only
+ Lets the legacy iOS EAP client negotiate TLS 1.2 (raise-only
  version ceiling) so WPA2-Enterprise networks such as ANU-Secure work.
  .
  Also installs a watchdog: if the device stays "connected" with no
@@ -51,7 +51,10 @@ Description: EAP TLS 1.2 plus automatic Wi-Fi recovery
  re-associates and re-authenticates automatically. Recovery log:
  /var/mobile/Media/wifi-watchdog.log
  .
- Certificate validation and credentials are untouched.
+ 1.4.0 ships its own parent directories and installs the helper to
+ /usr/bin, fixing "Unable to create usr/local/bin/wifi-watchdog.sh"
+ on devices without /usr/local/bin.
+
 Author: J_W_I_
 Name: EAP TLS 1.2 Fix
 
