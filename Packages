@@ -55,3 +55,25 @@ Description: Enables TLS 1.2 for the legacy iOS 5/6 EAP client
 Author: J_W_I_
 Name: EAP TLS 1.2 Fix
 
+Package: local.wifiwatchdog
+Version: 1.0.0
+Architecture: iphoneos-arm
+Maintainer: J_W_I_
+Installed-Size: 3
+Depends: firmware (>= 5.0), bash
+Filename: ./debs/wifiwatchdog_1.0.0_iphoneos-arm.deb
+Size: 2148
+MD5sum: d526c8cd3a0687bebbeba6cf82d3e438
+SHA1: 452fb8bc7f022b132f61a6a7349a0b581d2770b9
+SHA256: b4de5e600b8197355e27cd9159afbfde4b38ee475f246119bda0003ea4ae525b
+Section: System
+Description: Recovers stale Wi-Fi associations on legacy iOS
+ Probes connectivity and restarts wifid after three consecutive
+ failures, forcing a fresh associate/EAP/DHCP cycle. Useful when
+ the device shows connected but no traffic passes.
+ .
+ Runs as a LaunchDaemon; recovery log is written to
+ /var/mobile/Media/wifi-watchdog.log.
+Author: J_W_I_
+Name: Wi-Fi Auto-Recovery
+
