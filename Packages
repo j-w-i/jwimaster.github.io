@@ -30,9 +30,6 @@ Description: Give your notifications style!
 Author: J_W_I_
 Name: NotificationGlow2
 
-Author: J_W_I_
-Name: EAP TLS 1.2 Fix
-
 Package: local.eaptls12fix
 Version: 1.5.0
 Architecture: iphoneos-arm
