@@ -1,14 +1,21 @@
-/* EAP TLS 1.2 compatibility fix for iOS 5/6.
+/* EAP TLS 1.2 compatibility fix for iOS 5/6, plus Wi-Fi watchdog bootstrap.
  *
- * The legacy eapolclient creates its TLS context with kTLSProtocol1Only, so
- * PEAP/TTLS only advertise TLS 1.0 and servers that require TLS 1.2 reject
- * the handshake. This tweak raises the *maximum* protocol version to TLS 1.2
- * for EAP client contexts, leaving the minimum at TLS 1.0 so that re-auth and
- * session resumption can still fall back instead of failing the link.
+ * TLS part:
+ *   The legacy eapolclient creates its TLS context with kTLSProtocol1Only, so
+ *   PEAP/TTLS only advertise TLS 1.0 and servers that require TLS 1.2 reject
+ *   the handshake. This tweak raises the *maximum* protocol version to TLS 1.2
+ *   for EAP client contexts, leaving the minimum at TLS 1.0 so re-auth and
+ *   session reuse can still fall back instead of failing the link.
+ *
+ * Watchdog part:
+ *   wifid/eapolclient start as root and can keep a dead association alive
+ *   ("connected", no traffic). When loaded into either process this tweak
+ *   starts /usr/local/bin/wifi-watchdog.sh detached if it is not already
+ *   running, so the recovery daemon is re-established on every Wi-Fi restart.
  *
  * Certificate validation, trust anchors, server-name checks and credentials
- * are untouched. Only eapolclient is instrumented; removing the dylib/filter
- * fully reverses the change.
+ * are untouched. Only eapolclient/wifid are instrumented; removing the
+ * dylib/filter fully reverses the change.
  */
 typedef int OSStatus;
 typedef unsigned int SSLProtocol;
@@ -22,6 +29,15 @@ extern void *dlopen(const char *, int);
 extern void syslog(int, const char *, ...);
 extern const char *getprogname(void);
 extern int strcmp(const char *, const char *);
+extern unsigned int geteuid(void);
+extern int open(const char *, int, ...);
+extern long read(int, void *, unsigned long);
+extern int close(int);
+extern int kill(int, int);
+extern int fork(void);
+extern int setsid(void);
+extern int execl(const char *, const char *, ...);
+extern void _exit(int);
 
 static void (*hook_function)(void *, void *, void **);
 static SSLContextRef (*original_create)(SSLProtocol, Boolean, ReadFunc, WriteFunc, void *, char *, OSStatus *);
@@ -29,6 +45,34 @@ static OSStatus (*set_max)(SSLContextRef, SSLProtocol);
 
 #define kTLSProtocol1Only 5
 #define kTLSProtocol12 8
+#define O_RDONLY 0
+
+static int watchdog_running(void) {
+    char buf[32];
+    long n;
+    int fd = open("/var/run/wifi-watchdog.pid", O_RDONLY);
+    int pid = 0;
+    char *p;
+    if (fd < 0) return 0;
+    n = read(fd, buf, sizeof(buf) - 1);
+    close(fd);
+    if (n <= 0) return 0;
+    buf[n] = '\0';
+    for (p = buf; *p >= '0' && *p <= '9'; p++) pid = pid * 10 + (*p - '0');
+    return (pid > 1 && kill(pid, 0) == 0) ? 1 : 0;
+}
+
+static void ensure_watchdog(void) {
+    int child;
+    if (geteuid() != 0) return;
+    if (watchdog_running()) return;
+    child = fork();
+    if (child == 0) {
+        setsid();
+        execl("/bin/bash", "bash", "/usr/local/bin/wifi-watchdog.sh", (char *)0);
+        _exit(127);
+    }
+}
 
 static SSLContextRef create_with_tls12(SSLProtocol protocol, Boolean server,
                                        ReadFunc readfn, WriteFunc writefn,
@@ -41,7 +85,6 @@ static SSLContextRef create_with_tls12(SSLProtocol protocol, Boolean server,
      * session can still negotiate downward instead of breaking authentication. */
     OSStatus maximum = set_max(ctx, kTLSProtocol12);
     if (maximum != 0) {
-        /* Leave the stock context intact rather than failing the connection. */
         syslog(3, "EAPTLS12Fix: SSLSetProtocolVersionMax failed (%d); using default TLS", maximum);
         return ctx;
     }
@@ -50,22 +93,33 @@ static SSLContextRef create_with_tls12(SSLProtocol protocol, Boolean server,
 }
 
 __attribute__((constructor)) static void install(void) {
-    if (strcmp(getprogname(), "eapolclient") != 0) {
-        return;
-    }
+    const char *prog = getprogname();
     void *global = (void *)-2; /* RTLD_DEFAULT on Darwin */
-    void *target = dlsym(global, "EAPSSLContextCreate");
-    set_max = dlsym(global, "SSLSetProtocolVersionMax");
-    if (target == (void *)0 || set_max == (void *)0) {
-        syslog(3, "EAPTLS12Fix: required API missing; no hook installed");
+
+    /* Keep the Wi-Fi recovery daemon alive on every wifid/eapolclient start. */
+    if (strcmp(prog, "wifid") == 0 || strcmp(prog, "eapolclient") == 0) {
+        ensure_watchdog();
+    }
+    if (strcmp(prog, "eapolclient") != 0) {
         return;
     }
-    void *substrate = dlopen("/Library/Frameworks/CydiaSubstrate.framework/CydiaSubstrate", 2);
-    hook_function = substrate ? dlsym(substrate, "MSHookFunction") : (void *)0;
-    if (hook_function == (void *)0) {
-        syslog(3, "EAPTLS12Fix: Substrate hook API unavailable; no hook installed");
-        return;
+
+    {
+        void *target = dlsym(global, "EAPSSLContextCreate");
+        set_max = dlsym(global, "SSLSetProtocolVersionMax");
+        if (target == (void *)0 || set_max == (void *)0) {
+            syslog(3, "EAPTLS12Fix: required API missing; no hook installed");
+            return;
+        }
+        {
+            void *substrate = dlopen("/Library/Frameworks/CydiaSubstrate.framework/CydiaSubstrate", 2);
+            hook_function = substrate ? dlsym(substrate, "MSHookFunction") : (void *)0;
+            if (hook_function == (void *)0) {
+                syslog(3, "EAPTLS12Fix: Substrate hook API unavailable; no hook installed");
+                return;
+            }
+            hook_function((void *)((unsigned long)target | 1), (void *)create_with_tls12, (void **)&original_create);
+        }
     }
-    hook_function((void *)((unsigned long)target | 1), (void *)create_with_tls12, (void **)&original_create);
     syslog(5, "EAPTLS12Fix: installed EAP TLS 1.2 ceiling hook");
 }

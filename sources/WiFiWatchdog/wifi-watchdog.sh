@@ -6,6 +6,7 @@
 # EAP/DHCP cycle) only after several consecutive failures.
 export PATH=/usr/bin:/bin:/usr/sbin:/sbin
 LOG=/var/mobile/Media/wifi-watchdog.log
+PIDFILE=/var/run/wifi-watchdog.pid
 DRYRUN=${WIFI_WATCHDOG_DRYRUN:-0}
 FAILS_NEEDED=3
 COOLDOWN=300
@@ -13,6 +14,15 @@ SLEEP_OK=20
 SLEEP_AFTER=40
 
 log() { echo "$(date '+%Y-%m-%d %H:%M:%S') $*" >> "$LOG" 2>/dev/null; }
+
+if [ -f "$PIDFILE" ]; then
+    old=$(cat "$PIDFILE" 2>/dev/null)
+    if [ -n "$old" ] && kill -0 "$old" 2>/dev/null; then
+        exit 0
+    fi
+fi
+echo $$ > "$PIDFILE"
+trap 'rm -f "$PIDFILE"' EXIT INT TERM
 
 # 0 = reachable (connected or actively refused), 1 = timeout/unreachable
 probe() {
