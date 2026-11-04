@@ -1,47 +1,44 @@
 Package: bounce
+Name: DVDBounce
 Version: 0.0.1-1+debug
 Architecture: iphoneos-arm64
 Maintainer: JWI Master
-Installed-Size: 168
+Author: JWI Master
+Section: Tweaks
 Depends: mobilesubstrate (>= 0.9.5000)
+Installed-Size: 168
+Description: An awesome MobileSubstrate tweak!
 Filename: ./debs/bounce_0.0.1-1+debug_iphoneos-arm64.deb
 Size: 6154
 MD5sum: 14c30728269a05114242ddf50ed27bb8
 SHA1: 51dd4437c84fea8b4c27f35e82de473dc1013cbf
 SHA256: 1a670e92dc6bdc42643d2ec0af2ec464eb26a40c05d9d6e23512b3f7ec600f4f
-Section: Tweaks
-Description: An awesome MobileSubstrate tweak!
-Author: JWI Master
-Name: DVDBounce
 
 Package: jwi
+Name: NotificationGlow2
 Version: 0.0.1-53+debug
 Architecture: iphoneos-arm64
 Maintainer: J_W_I_
-Installed-Size: 352
+Author: J_W_I_
+Section: Tweaks
 Depends: mobilesubstrate (>= 0.9.5000), com.mrgcgamer.libgcuniversal
+Installed-Size: 352
+Description: Give your notifications style!
 Filename: ./debs/jwi_0.0.1-53+debug_iphoneos-arm64.deb
 Size: 12290
 MD5sum: a8293927175f00db6fa6e1e861fc5494
 SHA1: 91d8dacef83207df58f28d7627ccbcd9a81926b6
 SHA256: 0978a8266f457c5e9a35fab974f8438e65967ae3919ee2ca4e35a3f1f4ce25f1
-Section: Tweaks
-Description: Give your notifications style!
-Author: J_W_I_
-Name: NotificationGlow2
 
 Package: local.eaptls12fix
+Name: EAP TLS 1.2 Fix
 Version: 1.5.0
 Architecture: iphoneos-arm
 Maintainer: J_W_I_
-Installed-Size: 80
-Depends: mobilesubstrate (>= 0.9.5000), bash
-Filename: ./debs/eaptls12fix_1.5.0_iphoneos-arm.deb
-Size: 6944
-MD5sum: 6c7fa1366212031fcc6105f08439f980
-SHA1: b5a5b731884d410e119555798c56c2289781e46a
-SHA256: 629e413d9c17288754909aa17ff6784357970afee5e79e0891d1744a1dc8b150
+Author: J_W_I_
 Section: Tweaks
+Depends: mobilesubstrate (>= 0.9.5000), bash
+Installed-Size: 80
 Description: EAP TLS 1.2 plus automatic Wi-Fi recovery
  Universal armv7 + arm64 build. Raises the TLS ceiling of the legacy
  iOS EAP client so WPA2-Enterprise networks such as ANU-Secure work.
@@ -52,6 +49,9 @@ Description: EAP TLS 1.2 plus automatic Wi-Fi recovery
  .
  Supports rootful and rootless (/var/jb) jailbreaks and both the
  iOS 5/6 (kTLSProtocol1Only) and iOS 7+ (kTLSProtocol1) EAP contexts.
-Author: J_W_I_
-Name: EAP TLS 1.2 Fix
+Filename: ./debs/eaptls12fix_1.5.0_iphoneos-arm.deb
+Size: 6944
+MD5sum: 6c7fa1366212031fcc6105f08439f980
+SHA1: b5a5b731884d410e119555798c56c2289781e46a
+SHA256: 629e413d9c17288754909aa17ff6784357970afee5e79e0891d1744a1dc8b150
 
