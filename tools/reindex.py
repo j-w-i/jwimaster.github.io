@@ -4,7 +4,7 @@
 Usage: tools/reindex.py [--check]
 --check exits non-zero if the committed index is out of date or invalid.
 """
-import bz2, gzip, hashlib, io, os, re, sys, tarfile
+import bz2, hashlib, io, os, struct, sys, tarfile, zlib
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEBS = os.path.join(ROOT, "debs")
@@ -69,6 +69,15 @@ def stanza_for(path):
     return c.get("Package", rel), "\n".join(out)
 
 
+def gzip_stable(data):
+    """gzip with a fixed header so output is byte-identical everywhere."""
+    co = zlib.compressobj(9, zlib.DEFLATED, -15)
+    body = co.compress(data) + co.flush()
+    header = b"\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\x03"
+    trailer = struct.pack("<II", zlib.crc32(data) & 0xFFFFFFFF, len(data) & 0xFFFFFFFF)
+    return header + body + trailer
+
+
 def build():
     debs = sorted(os.path.join(DEBS, f) for f in os.listdir(DEBS) if f.endswith(".deb"))
     stanzas = [stanza_for(p) for p in debs]
@@ -80,7 +89,7 @@ def build():
 def main():
     text, stanzas = build()
     raw = text.encode()
-    gz = gzip.compress(raw, mtime=0)
+    gz = gzip_stable(raw)
     bz = bz2.compress(raw)
     files = {"Packages": raw, "Packages.gz": gz, "Packages.bz2": bz}
     head = ("Origin: J_W_I_'s Repo\nLabel: J_W_I_'s Repo\nSuite: stable\n"
