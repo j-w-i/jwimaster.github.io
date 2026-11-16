@@ -1,6 +1,6 @@
 Package: local.eaptls12fix
 Name: EAP TLS 1.2 Fix
-Version: 1.6.0
+Version: 1.6.1
 Architecture: iphoneos-arm
 Maintainer: J_W_I_
 Author: J_W_I_
@@ -15,6 +15,9 @@ Description: EAP TLS 1.2 plus automatic Wi-Fi recovery
  associated but has no address, a self-assigned 169.254.x address, or no
  traffic (DHCP renew, then a clean wifid restart), and nudges auto-join
  when it stays unassociated. Log: /var/mobile/Media/wifi-watchdog.log
+ (every association/network/address change, with signal strength); on a
+ drop or failed check the Wi-Fi/EAP/DHCP system log is saved to
+ /var/mobile/Media/wifi-diag/ so the cause can be read afterwards.
  .
  Supports rootful and rootless (/var/jb) jailbreaks and both the
  iOS 5/6 (kTLSProtocol1Only) and iOS 7+ (kTLSProtocol1) EAP contexts.

@@ -20,7 +20,7 @@ if [ -d "$JB" ]; then
     mkdir -p "$JB$D" "$JB/Library/LaunchDaemons" "$JB/usr/bin"
     cp -f "$D/EAPTLS12FixV10.dylib" "$D/EAPTLS12FixV10.plist" "$JB$D/"
     cp -f "$S" "$JB/usr/bin/wifi-watchdog.sh"
-    mkdir -p "$JB/usr/libexec"; cp -f /usr/libexec/wifi-watchdog-reap "$JB/usr/libexec/"
+    mkdir -p "$JB/usr/libexec"; cp -f /usr/libexec/wifi-watchdog-reap /usr/libexec/wifi-watchdog-diag "$JB/usr/libexec/"
     sed 's#/usr/bin/wifi-watchdog.sh#/var/jb/usr/bin/wifi-watchdog.sh#; s#<string>/bin/bash</string>#<string>/var/jb/bin/bash</string>#' "$P" > "$JB/Library/LaunchDaemons/com.jwi.wifiwatchdog.plist"
     chmod 755 "$JB$D/EAPTLS12FixV10.dylib" "$JB/usr/bin/wifi-watchdog.sh" 2>/dev/null
     chmod 644 "$JB$D/EAPTLS12FixV10.plist" "$JB/Library/LaunchDaemons/com.jwi.wifiwatchdog.plist" 2>/dev/null

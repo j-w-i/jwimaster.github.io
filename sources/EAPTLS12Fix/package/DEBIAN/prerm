@@ -8,7 +8,7 @@ if [ -d "$JB" ]; then
     rm -f "$JB/Library/LaunchDaemons/com.jwi.wifiwatchdog.plist" "$JB/usr/bin/wifi-watchdog.sh" \
           "$JB/Library/MobileSubstrate/DynamicLibraries/EAPTLS12FixV10.dylib" \
           "$JB/Library/MobileSubstrate/DynamicLibraries/EAPTLS12FixV10.plist" \
-          "$JB/usr/libexec/wifi-watchdog-reap" "$JB/var/run/wifi-watchdog.pid"
+          "$JB/usr/libexec/wifi-watchdog-reap" "$JB/usr/libexec/wifi-watchdog-diag" "$JB/var/run/wifi-watchdog.pid"
 else
     launchctl unload -w /Library/LaunchDaemons/com.jwi.wifiwatchdog.plist 2>/dev/null
     /usr/libexec/wifi-watchdog-reap 2>/dev/null

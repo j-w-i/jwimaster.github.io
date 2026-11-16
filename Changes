@@ -1,3 +1,16 @@
+local.eaptls12fix (1.6.1) stable; urgency=low
+
+  * Diagnostics for dropped connections. The watchdog log now records every
+    change of association, network, access point (roams) and address with
+    signal strength and channel, plus a signal heartbeat every 10 minutes.
+  * On a disassociation, lost address, failed check, or before any recovery
+    action, the surrounding Wi-Fi/EAP/DHCP system log (driver joins and
+    disassociations, wifid, eapolclient, configd) is saved to
+    /var/mobile/Media/wifi-diag/ (newest 30 kept) by the new helper
+    /usr/libexec/wifi-watchdog-diag, so the reason survives log rotation.
+
+ -- J_W_I_ <64947174+JWIMaster@users.noreply.github.com>  Tue, 17 Nov 2026 06:35:00 +1100
+
 local.eaptls12fix (1.6.0) stable; urgency=medium
 
   * Fix the Wi-Fi recovery watchdog undoing itself. launchd is now the only

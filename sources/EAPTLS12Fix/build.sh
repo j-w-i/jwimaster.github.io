@@ -42,7 +42,15 @@ DYLIB=EAPTLS12FixV10.dylib
 "$CC" -target arm64-apple-ios7.0 -isysroot "$SDK" -Os "$HERE/wifi-watchdog-reap.c" -o "$WORK/reap-arm64"
 "$LIPO" -create "$WORK/reap-armv7" "$WORK/reap-arm64" -output "$STAGE/usr/libexec/wifi-watchdog-reap"
 
-ldid -S "$STAGE/Library/MobileSubstrate/DynamicLibraries/$DYLIB" "$STAGE/usr/libexec/wifi-watchdog-reap"
+# System-log capture helper for diagnostics snapshots: same two slices and iOS 5 entry-point check.
+"$CC" -target armv7-apple-ios5.0 -isysroot "$SDK" -Os -Wno-deprecated-declarations -L "$LEGACY_CRT_DIR" -Wl,-fatal_warnings \
+  "$HERE/wifi-watchdog-diag.c" -o "$WORK/diag-armv7"
+"$XC/Toolchains/XcodeDefault.xctoolchain/usr/bin/otool" -l "$WORK/diag-armv7" | grep -q LC_UNIXTHREAD \
+  || { echo "armv7 diag helper is not an iOS 5 executable (no LC_UNIXTHREAD)" >&2; exit 1; }
+"$CC" -target arm64-apple-ios7.0 -isysroot "$SDK" -Os -Wno-deprecated-declarations "$HERE/wifi-watchdog-diag.c" -o "$WORK/diag-arm64"
+"$LIPO" -create "$WORK/diag-armv7" "$WORK/diag-arm64" -output "$STAGE/usr/libexec/wifi-watchdog-diag"
+
+ldid -S "$STAGE/Library/MobileSubstrate/DynamicLibraries/$DYLIB" "$STAGE/usr/libexec/wifi-watchdog-reap" "$STAGE/usr/libexec/wifi-watchdog-diag"
 cp "$STAGE/Library/MobileSubstrate/DynamicLibraries/$DYLIB" "$HERE/$DYLIB"
 
 OUT="$REPO/debs/eaptls12fix_${VERSION}_iphoneos-arm.deb"
@@ -51,7 +59,7 @@ OUT="$REPO/debs/eaptls12fix_${VERSION}_iphoneos-arm.deb"
 import gzip, io, os, sys, tarfile
 stage, out = sys.argv[1], sys.argv[2]
 MTIME = 1794787200  # 2026-11-17
-EXEC = {"DEBIAN/postinst", "DEBIAN/prerm", "usr/bin/wifi-watchdog.sh", "usr/libexec/wifi-watchdog-reap"}
+EXEC = {"DEBIAN/postinst", "DEBIAN/prerm", "usr/bin/wifi-watchdog.sh", "usr/libexec/wifi-watchdog-reap", "usr/libexec/wifi-watchdog-diag"}
 def tar_gz(base, names):
     raw = io.BytesIO()
     with tarfile.open(fileobj=raw, mode="w", format=tarfile.GNU_FORMAT) as t:

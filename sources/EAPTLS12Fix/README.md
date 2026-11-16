@@ -1,6 +1,6 @@
 # EAP TLS 1.2 Fix
 
-Source for the `local.eaptls12fix` package in this repo (current: 1.6.0).
+Source for the `local.eaptls12fix` package in this repo (current: 1.6.1).
 
 ## What it does
 
@@ -24,6 +24,14 @@ checks and credentials are untouched.
 | Associated with an address, no traffic | restart `wifid` (`launchctl stop`, clean EAP teardown) |
 | Powered on but unassociated for 10 min | restart `wifid` to nudge auto-join, at most every 30 min |
 
+**Diagnostics.** The log records every change of association, network, access
+point (roam) and address with signal strength and channel, and a signal heartbeat
+every 10 minutes. On a disassociation, lost address, failed check or before any
+action, `/usr/libexec/wifi-watchdog-diag` saves the surrounding Wi-Fi/EAP/DHCP
+system log (driver, `wifid`, `eapolclient`, `configd`) to
+`/var/mobile/Media/wifi-diag/<time>-<event>.log` (newest 30 kept). To see why a
+connection dropped, read the newest file there.
+
 Actions need three failed checks in a row and wifid restarts are at least 5 min
 apart. A host that refuses a connection counts as reachable; timeouts and
 "no route"/"unreachable" errors do not. Log: `/var/mobile/Media/wifi-watchdog.log`
@@ -45,8 +53,8 @@ whose `LC_MAIN` entry point iOS 5 cannot start; `build.sh` refuses that. Output:
 
 ## Test
 
-`tests/test-watchdog.sh package/usr/bin/wifi-watchdog.sh` runs eight dry-run
-scenarios (stubbed `scutil`/`ipconfig`/`timeout`; nothing is restarted) and
+`tests/test-watchdog.sh package/usr/bin/wifi-watchdog.sh` runs ten dry-run
+scenarios (including a drop with its timeline and snapshot, and a roam) (stubbed `scutil`/`ipconfig`/`timeout`; nothing is restarted) and
 should be run on the device (bash 4, no `awk`).
 
 ## Tested
