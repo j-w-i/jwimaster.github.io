@@ -1,3 +1,26 @@
+local.eaptls12fix (1.6.0) stable; urgency=medium
+
+  * Fix the Wi-Fi recovery watchdog undoing itself. launchd is now the only
+    thing that runs it (KeepAlive); 1.5.0 also started it from postinst and
+    from inside wifid/eapolclient, which raced into duplicate watchdogs that
+    each restarted wifid. It exits on SIGTERM (1.5.0 trapped TERM without
+    exiting, so every upgrade left the old copy running), and the package
+    reaps leftover copies with a new helper, /usr/libexec/wifi-watchdog-reap.
+  * Detect the real failure states from SystemConfiguration: associated with
+    no address or a self-assigned 169.254.x address (renew DHCP, then restart
+    wifid), associated with no traffic (restart wifid), and long periods
+    powered-on but unassociated (occasional auto-join nudge). 1.5.0 treated
+    "No route to host" as reachable and ignored a missing address, so the
+    common ANU-Secure DHCP failure was never recovered.
+  * wifid is restarted with launchctl stop (clean EAP teardown) instead of
+    SIGKILL. The log rotates at 256 KB.
+  * The tweak loads into eapolclient only and no longer forks processes;
+    the TLS 1.2 ceiling hook is unchanged.
+  * Source for the whole package (watchdog, launchd job, scripts, build.sh,
+    device scenario tests) now lives in sources/EAPTLS12Fix.
+
+ -- J_W_I_ <64947174+JWIMaster@users.noreply.github.com>  Tue, 17 Nov 2026 06:30:00 +1100
+
 local.eaptls12fix (1.0.1) stable; urgency=low
 
   * Add EAP TLS 1.2 Fix, enabling TLS 1.2 for the legacy iOS 5/6

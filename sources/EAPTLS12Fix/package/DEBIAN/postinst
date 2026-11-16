@@ -1,0 +1,37 @@
+#!/bin/sh
+# launchd is the only thing that starts the watchdog (KeepAlive). 1.5.0 also started
+# it with nohup here and from inside wifid/eapolclient, and its TERM trap did not
+# exit, so stale copies survived upgrades: stop those first.
+JB=/var/jb
+D=/Library/MobileSubstrate/DynamicLibraries
+S=/usr/bin/wifi-watchdog.sh
+P=/Library/LaunchDaemons/com.jwi.wifiwatchdog.plist
+
+for f in EAPTLS12Fix EAPTLS12FixV3 EAPTLS12FixV6 EAPTLS12FixV7 EAPTLS12FixV8 EAPTLS12FixV9; do
+    rm -f "$D/$f.dylib" "$D/$f.plist"
+    [ -d "$JB" ] && rm -f "$JB$D/$f.dylib" "$JB$D/$f.plist"
+done
+
+
+chmod 755 "$D/EAPTLS12FixV10.dylib" "$S" 2>/dev/null
+chmod 644 "$D/EAPTLS12FixV10.plist" "$P" 2>/dev/null
+
+if [ -d "$JB" ]; then
+    mkdir -p "$JB$D" "$JB/Library/LaunchDaemons" "$JB/usr/bin"
+    cp -f "$D/EAPTLS12FixV10.dylib" "$D/EAPTLS12FixV10.plist" "$JB$D/"
+    cp -f "$S" "$JB/usr/bin/wifi-watchdog.sh"
+    mkdir -p "$JB/usr/libexec"; cp -f /usr/libexec/wifi-watchdog-reap "$JB/usr/libexec/"
+    sed 's#/usr/bin/wifi-watchdog.sh#/var/jb/usr/bin/wifi-watchdog.sh#; s#<string>/bin/bash</string>#<string>/var/jb/bin/bash</string>#' "$P" > "$JB/Library/LaunchDaemons/com.jwi.wifiwatchdog.plist"
+    chmod 755 "$JB$D/EAPTLS12FixV10.dylib" "$JB/usr/bin/wifi-watchdog.sh" 2>/dev/null
+    chmod 644 "$JB$D/EAPTLS12FixV10.plist" "$JB/Library/LaunchDaemons/com.jwi.wifiwatchdog.plist" 2>/dev/null
+    LC="$JB/usr/bin/launchctl"; PLIST="$JB/Library/LaunchDaemons/com.jwi.wifiwatchdog.plist"
+else
+    LC=launchctl; PLIST="$P"
+fi
+"$LC" unload "$PLIST" 2>/dev/null
+# Stop every other copy (old unmanaged ones included) before launchd starts the one it owns.
+REAP=/usr/libexec/wifi-watchdog-reap; [ -x "$JB$REAP" ] && REAP="$JB$REAP"
+"$REAP" 2>/dev/null
+rm -f /var/run/wifi-watchdog.pid /tmp/wifi-watchdog.pid "$JB/var/run/wifi-watchdog.pid"
+"$LC" load -w "$PLIST" 2>/dev/null
+exit 0

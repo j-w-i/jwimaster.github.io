@@ -1,4 +1,4 @@
-/* EAP TLS 1.2 compatibility fix for iOS 5/6, plus Wi-Fi watchdog bootstrap.
+/* EAP TLS 1.2 compatibility fix for iOS 5/6/7.
  *
  * TLS part:
  *   The legacy eapolclient creates its TLS context with kTLSProtocol1Only (iOS
@@ -8,15 +8,14 @@
  *   contexts, leaving the minimum at TLS 1.0 so re-auth and session reuse can
  *   still fall back instead of failing the link.
  *
- * Watchdog part:
- *   wifid/eapolclient start as root and can keep a dead association alive
- *   ("connected", no traffic). When loaded into either process this tweak
- *   starts /usr/bin/wifi-watchdog.sh detached if it is not already
- *   running, so the recovery daemon is re-established on every Wi-Fi restart.
+ * The Wi-Fi recovery watchdog is a separate launchd job (com.jwi.wifiwatchdog).
+ * Up to 1.5.0 this dylib also forked the watchdog from inside wifid and
+ * eapolclient; those children inherited the daemons' descriptors, were never
+ * reaped, and raced each other into duplicate watchdogs that each restarted
+ * wifid. launchd now owns the watchdog and this dylib loads into eapolclient only.
  *
  * Certificate validation, trust anchors, server-name checks and credentials
- * are untouched. Only eapolclient/wifid are instrumented; removing the
- * dylib/filter fully reverses the change.
+ * are untouched. Removing the dylib/filter fully reverses the change.
  */
 typedef int OSStatus;
 typedef unsigned int SSLProtocol;
@@ -31,16 +30,6 @@ extern int access(const char *, int);
 extern void syslog(int, const char *, ...);
 extern const char *getprogname(void);
 extern int strcmp(const char *, const char *);
-extern unsigned int geteuid(void);
-extern int open(const char *, int, ...);
-extern long read(int, void *, unsigned long);
-extern int close(int);
-extern int kill(int, int);
-extern int fork(void);
-extern int setsid(void);
-extern int execl(const char *, const char *, ...);
-extern void _exit(int);
-
 static void (*hook_function)(void *, void *, void **);
 static SSLContextRef (*original_create)(SSLProtocol, Boolean, ReadFunc, WriteFunc, void *, char *, OSStatus *);
 static OSStatus (*set_max)(SSLContextRef, SSLProtocol);
@@ -48,48 +37,6 @@ static OSStatus (*set_max)(SSLContextRef, SSLProtocol);
 #define kTLSProtocol1 4
 #define kTLSProtocol1Only 5
 #define kTLSProtocol12 8
-#define O_RDONLY 0
-
-static int watchdog_running(void) {
-    char buf[32];
-    long n;
-    int fd = open("/var/run/wifi-watchdog.pid", O_RDONLY);
-    if (fd < 0) fd = open("/tmp/wifi-watchdog.pid", O_RDONLY);
-    int pid = 0;
-    char *p;
-    if (fd < 0) return 0;
-    n = read(fd, buf, sizeof(buf) - 1);
-    close(fd);
-    if (n <= 0) return 0;
-    buf[n] = '\0';
-    for (p = buf; *p >= '0' && *p <= '9'; p++) pid = pid * 10 + (*p - '0');
-    return (pid > 1 && kill(pid, 0) == 0) ? 1 : 0;
-}
-
-static const char *first_existing(const char *a, const char *b, const char *c) {
-    if (a && access(a, 0) == 0) return a;
-    if (b && access(b, 0) == 0) return b;
-    if (c && access(c, 0) == 0) return c;
-    return (const char *)0;
-}
-
-static void ensure_watchdog(void) {
-    int child;
-    const char *script, *shell;
-    if (geteuid() != 0) return;
-    if (watchdog_running()) return;
-    script = first_existing("/usr/bin/wifi-watchdog.sh",
-                            "/var/jb/usr/bin/wifi-watchdog.sh", (const char *)0);
-    shell = first_existing("/bin/bash", "/var/jb/bin/bash", "/var/jb/usr/bin/bash");
-    if (!script) return;
-    if (!shell) shell = "/bin/sh";
-    child = fork();
-    if (child == 0) {
-        setsid();
-        execl(shell, "bash", script, (char *)0);
-        _exit(127);
-    }
-}
 
 static SSLContextRef create_with_tls12(SSLProtocol protocol, Boolean server,
                                        ReadFunc readfn, WriteFunc writefn,
@@ -113,10 +60,6 @@ __attribute__((constructor)) static void install(void) {
     const char *prog = getprogname();
     void *global = (void *)-2; /* RTLD_DEFAULT on Darwin */
 
-    /* Keep the Wi-Fi recovery daemon alive on every wifid/eapolclient start. */
-    if (strcmp(prog, "wifid") == 0 || strcmp(prog, "eapolclient") == 0) {
-        ensure_watchdog();
-    }
     if (strcmp(prog, "eapolclient") != 0) {
         return;
     }
