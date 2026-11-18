@@ -41,10 +41,10 @@ scenario wifi-off          0 0 ""            ""        ok      4 "watchdog start
 scenario healthy           1 4 10.20.1.25    10.20.0.1 ok      4 "watchdog started"   "would|check failed"
 scenario refused-is-alive  1 4 10.20.1.25    10.20.0.1 refused 4 "watchdog started"   "would|check failed"
 scenario dhcp-failed       1 4 169.254.53.58 ""        noroute 9 "would renew DHCP.*" 
-scenario dhcp-then-restart 1 4 169.254.53.58 ""        noroute 14 "would restart wifid \(self-assigned"
+scenario dhcp-then-restart 1 4 169.254.53.58 ""        noroute 14 "would (power-cycle Wi-Fi|restart wifid) \(self-assigned"
 scenario no-address        1 4 ""            ""        ok      9 "would renew DHCP"
-scenario dead-link         1 4 10.20.1.25    10.20.0.1 timeout 30 "would restart wifid \(no traffic" "renew DHCP"
-scenario unassociated      1 0 ""            ""        ok      6 "would restart wifid \(unassociated"
+scenario dead-link         1 4 10.20.1.25    10.20.0.1 timeout 30 "would (power-cycle Wi-Fi|restart wifid) \(no traffic" "renew DHCP"
+scenario unassociated      1 0 ""            ""        ok      6 "would (power-cycle Wi-Fi|restart wifid) \(unassociated"
 # Timeline + diagnostics: associated, then the link drops -> state lines and a "disassociated" snapshot.
 mkdir -p "$W/drop"; printf '1 4 ANU-Secure 0x20a6cd43da61 -53\n1 4 ANU-Secure 0x20a6cd43da61 -71\n1 0 x x x\n' > "$W/drop/states"
 scenario drop              1 4 10.20.5.163   10.20.0.1 ok      5 "diagnostics saved: .*disassociated"

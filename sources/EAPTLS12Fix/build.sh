@@ -50,7 +50,17 @@ DYLIB=EAPTLS12FixV10.dylib
 "$CC" -target arm64-apple-ios7.0 -isysroot "$SDK" -Os -Wno-deprecated-declarations "$HERE/wifi-watchdog-diag.c" -o "$WORK/diag-arm64"
 "$LIPO" -create "$WORK/diag-armv7" "$WORK/diag-arm64" -output "$STAGE/usr/libexec/wifi-watchdog-diag"
 
+# Wi-Fi power-cycle helper (MobileWiFi, like the Settings switch): same two slices and check.
+"$CC" -target armv7-apple-ios5.0 -isysroot "$SDK" -Os -L "$LEGACY_CRT_DIR" -Wl,-fatal_warnings -framework CoreFoundation \
+  "$HERE/wifi-watchdog-power.c" -o "$WORK/power-armv7"
+"$XC/Toolchains/XcodeDefault.xctoolchain/usr/bin/otool" -l "$WORK/power-armv7" | grep -q LC_UNIXTHREAD \
+  || { echo "armv7 power helper is not an iOS 5 executable (no LC_UNIXTHREAD)" >&2; exit 1; }
+"$CC" -target arm64-apple-ios7.0 -isysroot "$SDK" -Os -framework CoreFoundation "$HERE/wifi-watchdog-power.c" -o "$WORK/power-arm64"
+"$LIPO" -create "$WORK/power-armv7" "$WORK/power-arm64" -output "$STAGE/usr/libexec/wifi-watchdog-power"
+
 ldid -S "$STAGE/Library/MobileSubstrate/DynamicLibraries/$DYLIB" "$STAGE/usr/libexec/wifi-watchdog-reap" "$STAGE/usr/libexec/wifi-watchdog-diag"
+# Later iOS versions gate WiFiManager on this entitlement (iOS 5 does not check it).
+ldid -S"$HERE/wifi-watchdog-power.entitlements" "$STAGE/usr/libexec/wifi-watchdog-power"
 cp "$STAGE/Library/MobileSubstrate/DynamicLibraries/$DYLIB" "$HERE/$DYLIB"
 
 OUT="$REPO/debs/eaptls12fix_${VERSION}_iphoneos-arm.deb"
@@ -59,7 +69,8 @@ OUT="$REPO/debs/eaptls12fix_${VERSION}_iphoneos-arm.deb"
 import gzip, io, os, sys, tarfile
 stage, out = sys.argv[1], sys.argv[2]
 MTIME = 1794787200  # 2026-11-17
-EXEC = {"DEBIAN/postinst", "DEBIAN/prerm", "usr/bin/wifi-watchdog.sh", "usr/libexec/wifi-watchdog-reap", "usr/libexec/wifi-watchdog-diag"}
+EXEC = {"DEBIAN/postinst", "DEBIAN/prerm", "usr/bin/wifi-watchdog.sh", "usr/libexec/wifi-watchdog-reap", "usr/libexec/wifi-watchdog-diag",
+        "usr/libexec/wifi-watchdog-power"}
 def tar_gz(base, names):
     raw = io.BytesIO()
     with tarfile.open(fileobj=raw, mode="w", format=tarfile.GNU_FORMAT) as t:

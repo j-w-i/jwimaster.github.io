@@ -59,3 +59,32 @@ MD5sum: 8964aaa0acb37e3d2203a19581d9bab9
 SHA1: 95b25d72d14fc83c575cdff46b923ba5c591484f
 SHA256: e26a259da6ff09996316f528c30993798ec5da7658920627b469806dd5be7818
 
+Package: local.eaptls12fix
+Name: EAP TLS 1.2 Fix
+Version: 1.7.0
+Architecture: iphoneos-arm
+Maintainer: J_W_I_
+Author: J_W_I_
+Section: Tweaks
+Depends: mobilesubstrate (>= 0.9.5000), bash
+Installed-Size: 80
+Description: EAP TLS 1.2 plus automatic Wi-Fi recovery
+ Universal armv7 + arm64 build. Raises the TLS ceiling of the legacy
+ iOS EAP client so WPA2-Enterprise networks such as ANU-Secure work.
+ .
+ Installs a launchd watchdog that recovers Wi-Fi when the device is
+ associated but has no address, a self-assigned 169.254.x address, or no
+ traffic (DHCP renew, then a Wi-Fi power cycle like the Settings switch),
+ and power-cycles Wi-Fi to rejoin when it stays unassociated. Log: /var/mobile/Media/wifi-watchdog.log
+ (every association/network/address change, with signal strength); on a
+ drop or failed check the Wi-Fi/EAP/DHCP system log is saved to
+ /var/mobile/Media/wifi-diag/ so the cause can be read afterwards.
+ .
+ Supports rootful and rootless (/var/jb) jailbreaks and both the
+ iOS 5/6 (kTLSProtocol1Only) and iOS 7+ (kTLSProtocol1) EAP contexts.
+Filename: ./debs/eaptls12fix_1.7.0_iphoneos-arm.deb
+Size: 26596
+MD5sum: 34e9378d22a65b74772f69175793d3a2
+SHA1: 3e4b6c0554d018aa6d45965db5c106ad29ed6413
+SHA256: 18cbc95a05a1ee10e29915d0641756a463497f90f0032cdaab30e5be17f380a9
+

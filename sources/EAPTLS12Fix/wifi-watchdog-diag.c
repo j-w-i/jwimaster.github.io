@@ -2,7 +2,8 @@
  *
  * The watchdog calls this when the link drops or a check fails, so the reason survives ASL
  * rotation: the Broadcom driver's join/disassociate lines, wifid, eapolclient (EAP/PEAP outcome,
- * TLS hook), configd/IPConfiguration (DHCP, captive), and anything mentioning the Wi-Fi stack.
+ * TLS hook), configd/IPConfiguration (DHCP, captive), anything mentioning the Wi-Fi stack, and
+ * sleep/wake, screen-lock and charging events (to tell a power-management drop from a radio one).
  * Usage: wifi-watchdog-diag SINCE_EPOCH_SECONDS
  */
 #include <asl.h>
@@ -17,7 +18,10 @@ static int relevant(const char *sender, const char *msg) {
     /* From any other sender (kernel driver, Preferences, apps), keep only Wi-Fi/EAP/DHCP lines. */
     static const char *words[] = {"BCMWLAN", "80211", "802.1X", "WiFi", "wifi", "Wi-Fi", "en0", "EAP",
                                   "DHCP", "SSID", "BSSID", "Joined", "ASSOCIATE", "deauth", "Deauth",
-                                  "disassoc", "Disassoc", "beacon", "roam", "Roam", NULL};
+                                  "disassoc", "Disassoc", "beacon", "roam", "Roam",
+                                  /* Power state: tells a sleep/lock-time drop from a radio one. */
+                                  "sleep", "Sleep", "wake", "Wake", "lock", "Lock", "Backlight", "backlight",
+                                  "PowerManagement", "IOPM", "charg", "Charg", "battery", NULL};
     int i;
     if (!msg) return 0;
     for (i = 0; sender && senders[i]; i++)

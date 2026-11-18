@@ -1,6 +1,6 @@
 # EAP TLS 1.2 Fix
 
-Source for the `local.eaptls12fix` package in this repo (current: 1.6.1).
+Source for the `local.eaptls12fix` package in this repo (current: 1.7.0).
 
 ## What it does
 
@@ -20,19 +20,26 @@ checks and credentials are untouched.
 | State | Action |
 |---|---|
 | Wi-Fi off, or associated with traffic flowing | nothing |
-| Associated, no address or self-assigned `169.254.x` (DHCP failed) | renew DHCP, then restart `wifid` |
-| Associated with an address, no traffic | restart `wifid` (`launchctl stop`, clean EAP teardown) |
-| Powered on but unassociated for 10 min | restart `wifid` to nudge auto-join, at most every 30 min |
+| Associated, no address or self-assigned `169.254.x` (DHCP failed) | renew DHCP, then power-cycle Wi-Fi |
+| Associated with an address, no traffic | power-cycle Wi-Fi |
+| Powered on but unassociated for 10 min | power-cycle Wi-Fi to rejoin, at most every 30 min |
+
+A power cycle is `/usr/libexec/wifi-watchdog-power`: Wi-Fi off for 2 s and on again through
+MobileWiFi's `WiFiManagerClientSetPower`, which is what the Settings switch does. Up to 1.6.1 the
+watchdog restarted `wifid` instead; on iOS 5 that leaves an 802.1X network such as ANU-Secure
+unjoined (AirPort state 3, scanning) for hours, while a power cycle rejoins and re-authenticates
+PEAP in about 9 s (iPod3,1, 5.1.1). Restarting `wifid` remains the fallback if the helper fails.
 
 **Diagnostics.** The log records every change of association, network, access
 point (roam) and address with signal strength and channel, and a signal heartbeat
 every 10 minutes. On a disassociation, lost address, failed check or before any
 action, `/usr/libexec/wifi-watchdog-diag` saves the surrounding Wi-Fi/EAP/DHCP
-system log (driver, `wifid`, `eapolclient`, `configd`) to
+system log (driver, `wifid`, `eapolclient`, `configd`, plus sleep/wake, screen-lock and charging
+events, to tell a power-management drop from a radio one) to
 `/var/mobile/Media/wifi-diag/<time>-<event>.log` (newest 30 kept). To see why a
 connection dropped, read the newest file there.
 
-Actions need three failed checks in a row and wifid restarts are at least 5 min
+Actions need three failed checks in a row and recoveries are at least 5 min
 apart. A host that refuses a connection counts as reachable; timeouts and
 "no route"/"unreachable" errors do not. Log: `/var/mobile/Media/wifi-watchdog.log`
 (rotated at 256 KB). `/usr/libexec/wifi-watchdog-reap` stops copies launchd does

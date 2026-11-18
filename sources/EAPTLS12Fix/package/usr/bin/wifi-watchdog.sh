@@ -4,9 +4,11 @@
 #
 # States, from the live SystemConfiguration store (scutil):
 #   Wi-Fi off, or associated with traffic flowing  -> nothing
-#   associated, no address or 169.254.x (DHCP)     -> renew DHCP, then restart wifid
-#   associated with an address, no traffic         -> restart wifid
-#   powered on, unassociated for a long time       -> occasional wifid restart (auto-join nudge)
+#   associated, no address or 169.254.x (DHCP)     -> renew DHCP, then power-cycle Wi-Fi
+#   associated with an address, no traffic         -> power-cycle Wi-Fi
+#   powered on, unassociated for a long time       -> occasional power cycle (auto-join nudge)
+# A power cycle goes through MobileWiFi like the Settings switch (wifi-watchdog-power). Restarting
+# wifid, which 1.6.x did, left 802.1X networks unjoined for hours on iOS 5; it is only the fallback.
 # Diagnostics: every change of association/network/access point/address is logged with signal
 # strength, and on a drop or failed check the surrounding Wi-Fi/EAP/DHCP system log is saved to
 # /var/mobile/Media/wifi-diag/ (newest 30 kept), so the reason survives system-log rotation.
@@ -19,7 +21,7 @@ DRYRUN="${WATCHDOG_DRYRUN:-0}"
 
 CHECK_EVERY=20          # seconds between checks while healthy
 FAILS_NEEDED=3          # consecutive failed checks before acting
-RESTART_COOLDOWN=300    # minimum seconds between wifid restarts
+RESTART_COOLDOWN=300    # minimum seconds between recoveries (power cycles / wifid restarts)
 SETTLE_AFTER=60         # seconds to wait after an action
 UNASSOCIATED_NUDGE=600  # seconds powered-on but unassociated before an auto-join nudge
 NUDGE_COOLDOWN=1800     # minimum seconds between auto-join nudges
@@ -30,6 +32,9 @@ DIAG_WINDOW=600         # seconds of system log before the event to save
 DIAG_MIN_GAP=60         # at most one snapshot per minute
 DIAG=/usr/libexec/wifi-watchdog-diag
 [ -x /var/jb/usr/libexec/wifi-watchdog-diag ] && DIAG=/var/jb/usr/libexec/wifi-watchdog-diag
+POWER_TOOL=/usr/libexec/wifi-watchdog-power
+[ -x /var/jb/usr/libexec/wifi-watchdog-power ] && POWER_TOOL=/var/jb/usr/libexec/wifi-watchdog-power
+POWER_OFF_FOR=2         # seconds Wi-Fi stays off during a power cycle
 if [ "$DRYRUN" = 1 ]; then
     # Test runs: separate log/PID file (never disturb the launchd instance), optional short timers.
     LOG=/var/mobile/Media/wifi-watchdog-dryrun.log
@@ -119,10 +124,14 @@ act() { # description command...
     "$@" >/dev/null 2>&1
 }
 
-restart_wifid() {
-    snapshot "before wifid restart: $1"
-    # A clean stop lets wifid tear down the EAP session; launchd restarts it at once.
-    act "restart wifid ($1)" launchctl stop com.apple.wifid
+recover_wifi() { # reason
+    snapshot "before Wi-Fi recovery: $1"
+    if [ -x "$POWER_TOOL" ] && act "power-cycle Wi-Fi ($1)" "$POWER_TOOL" $POWER_OFF_FOR; then
+        :
+    else
+        # Fallback: a clean stop lets wifid tear down the EAP session; launchd restarts it at once.
+        act "restart wifid ($1)" launchctl stop com.apple.wifid
+    fi
     last_restart=$(date +%s)
 }
 
@@ -204,7 +213,7 @@ while :; do
         [ $unassociated_since -eq 0 ] && unassociated_since=$now
         if [ $((now - unassociated_since)) -ge $UNASSOCIATED_NUDGE ] && [ $((now - last_nudge)) -ge $NUDGE_COOLDOWN ]; then
             last_nudge=$now
-            restart_wifid "unassociated for $((now - unassociated_since)) s; auto-join nudge"
+            recover_wifi "unassociated for $((now - unassociated_since)) s; auto-join nudge"
             sleep $SETTLE_AFTER; continue
         fi
         sleep $CHECK_EVERY; continue
@@ -242,9 +251,9 @@ while :; do
 
     if [ $((now - last_restart)) -ge $RESTART_COOLDOWN ]; then
         renewed=0
-        restart_wifid "$problem"
+        recover_wifi "$problem"
         sleep $SETTLE_AFTER; continue
     fi
-    log "wifid restart cooldown active ($((RESTART_COOLDOWN - (now - last_restart))) s left)"
+    log "recovery cooldown active ($((RESTART_COOLDOWN - (now - last_restart))) s left)"
     sleep $CHECK_EVERY
 done
